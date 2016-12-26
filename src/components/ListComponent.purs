@@ -8,14 +8,15 @@ import Halogen.HTML.Properties.Indexed as HP
 import Halogen.HTML.Core (className)
 import Halogen.Component (parentState, ParentState, ChildF)
 import Data.Maybe (Maybe (Nothing))
-import Data.Functor.Coproduct (Coproduct)
+import Data.Functor.Coproduct (Coproduct (..))
+import Data.Array ((:))
+import Data.Either (Either (..))
 
 import IdeaComponent (ideaComponent, IdeaQuery)
 import Model as M
 
-data ListQuery a = ToggleState a
+data ListQuery a = InsertIdea M.Idea a
 type ListQuery' = Coproduct ListQuery (ChildF Slot IdeaQuery)
-
 
 data ListSlot = ListSlot
 derive instance eqListSlot :: Eq ListSlot
@@ -30,8 +31,10 @@ derive instance ordSlot :: Ord Slot
 -- instance itemSlotOrd :: Ord ItemSlot where
 --   compare ItemSlot ItemSlot = EQ
 
--- type M.List = { on :: Boolean }
 type ListState' g = ParentState M.List M.Idea ListQuery IdeaQuery g Slot
+
+insertIdea :: forall a. M.Idea -> a -> ListQuery' a
+insertIdea idea next = Coproduct (Left (InsertIdea idea next) )
 
 initialListState :: forall g. ListState' g
 initialListState = parentState M.initialList
@@ -47,17 +50,19 @@ listComponent = H.parentComponent { render, eval, peek: Nothing }
     HH.div_
       [
       HH.div [HP.class_ (className "idea-list")]
-        (map renderIdea state.ideas)
+        (map (renderIdea state.nextIdea) state.ideas)
         -- [ HH.slot (IdeaSlot 0) (\_ -> { component: ideaComponent, initialListState: M.initialIdea})
         -- , HH.slot (IdeaSlot 1) (\_ -> { component: ideaComponent, initialListState: M.initialIdea})]
       ]
 
-  renderIdea :: M.IdeaId -> H.ParentHTML M.Idea ListQuery IdeaQuery g Slot
-  renderIdea ideaId =
-    HH.slot (IdeaSlot ideaId) (\_ -> { component: ideaComponent, initialState: M.initialIdea})
+  renderIdea :: M.Idea -> M.IdeaId -> H.ParentHTML M.Idea ListQuery IdeaQuery g Slot
+  renderIdea idea ideaId =
+    HH.slot (IdeaSlot ideaId) (\_ -> { component: ideaComponent, initialState: idea})
 
 
   eval :: ListQuery ~> H.ParentDSL M.List M.Idea ListQuery IdeaQuery g Slot
-  eval (ToggleState next) = do
-    -- H.modify (\state -> { on: not state.on })
+
+  eval (InsertIdea idea next) = do
+    -- currentId -> H.gets (\state -> state.nextId)
+    H.modify (\state -> { nextId: state.nextId + 1, nextIdea: idea, ideas: (state.nextId : state.ideas)})
     pure next

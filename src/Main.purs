@@ -8,14 +8,15 @@ import Halogen as H
 import Halogen.HTML.Events.Indexed as HE
 import Halogen.HTML.Indexed as HH
 import Halogen.Util (awaitBody, runHalogenAff)
-import Halogen.Component (parentState, ParentState, ChildF)
+import Halogen.Component (parentState, ParentState, ChildF (..))
 import Halogen.Component.ChildPath (ChildPath, cpL, cpR)
-import Data.Maybe (Maybe (Nothing))
-import Data.Either (Either)
-import Data.Functor.Coproduct (Coproduct)
+import Data.Maybe (Maybe (..))
+import Data.Either (Either (..))
+import Data.Functor.Coproduct (Coproduct (..))
+import Debug.Trace (traceA, traceAnyA)
 
-import ListComponent (listComponent, ListQuery', initialListState, ListState', ListSlot(..))
-import CreateIdeaComponent (createIdeaComponent, CreateIdeaSlot(..), CreateIdeaState, CreateIdeaQuery)
+import ListComponent (listComponent, ListQuery', initialListState, ListState', ListSlot (..), insertIdea)
+import CreateIdeaComponent (createIdeaComponent, CreateIdeaSlot(..), CreateIdeaState, CreateIdeaQuery (..))
 import Model as M
 
 
@@ -41,14 +42,30 @@ initialState = parentState { on: false }
 
 -- ui :: forall g. H.Component State Query g
 ui :: forall g. Functor g => H.Component (State' g) Query' g
-ui = H.parentComponent { render, eval, peek: Nothing }
+ui = H.parentComponent { render, eval, peek: Just peek }
   where
+
+  peek :: forall x. ChildF ChildSlot ChildQuery x -> H.ParentDSL State (ChildState g) Query ChildQuery g ChildSlot Unit
+  peek (ChildF p q) = case q of
+    Coproduct (Right (CreateIdea _)) ->  do
+      idea <- H.query' childPathCreateIdea CreateIdeaSlot (H.request GetIdea)
+      case idea of
+        Just idea' -> do
+          H.query' childPathList ListSlot (H.action (insertIdea idea'))
+          pure unit
+        Nothing -> pure unit
+    -- Remove _ -> do
+    --   wasComplete <- query p (request IsCompleted)
+    --   when (fromMaybe false wasComplete) $ modify $ updateNumCompleted (`sub` 1)
+      -- modify (removeTask p)
+    -- ToggleCompleted b _ -> modify $ updateNumCompleted (if b then (+ 1) else (`sub` 1))
+    _ -> pure unit
 
   render :: State -> H.ParentHTML (ChildState g) Query ChildQuery g ChildSlot
   render state =
     HH.div_
       [ HH.h1_
-          [ HH.text "Haskell Idea Box!" ]
+        [ HH.text "Haskell Idea Box!" ]
       , HH.slot' childPathCreateIdea CreateIdeaSlot (\_ -> { component: createIdeaComponent, initialState: M.initialIdea})
       , HH.slot' childPathList ListSlot (\_ -> { component: listComponent, initialState: initialListState})
       ]
