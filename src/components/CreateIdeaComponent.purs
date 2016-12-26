@@ -47,7 +47,7 @@ createIdeaComponent = H.component { render, eval }
       ]
     , HH.button
       [ HE.onClick (HE.input_ CreateIdea) ]
-      [HH.text "Create an Idea"]
+      [ HH.text "Create an Idea" ]
     ]
 
   eval :: CreateIdeaQuery ~> H.ComponentDSL CreateIdeaState CreateIdeaQuery g

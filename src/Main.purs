@@ -54,11 +54,6 @@ ui = H.parentComponent { render, eval, peek: Just peek }
           H.query' childPathList ListSlot (H.action (insertIdea idea'))
           pure unit
         Nothing -> pure unit
-    -- Remove _ -> do
-    --   wasComplete <- query p (request IsCompleted)
-    --   when (fromMaybe false wasComplete) $ modify $ updateNumCompleted (`sub` 1)
-      -- modify (removeTask p)
-    -- ToggleCompleted b _ -> modify $ updateNumCompleted (if b then (+ 1) else (`sub` 1))
     _ -> pure unit
 
   render :: State -> H.ParentHTML (ChildState g) Query ChildQuery g ChildSlot
