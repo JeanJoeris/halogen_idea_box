@@ -57,11 +57,11 @@ createIdeaComponent = H.component { render, eval }
     pure next
 
   eval (UpdateTitle title next) = do
-    H.modify (\state -> { title: title, body: state.body })
+    H.modify (\state -> { title: title, body: state.body, quality: state.quality})
     pure next
 
   eval (UpdateBody body next) = do
-    H.modify (\state -> { title: state.title, body: body })
+    H.modify (\state -> { title: state.title, body: body, quality: state.quality })
     pure next
 
   eval (GetIdea continue) = do

@@ -9,7 +9,7 @@ import Halogen.HTML.Core (className)
 import Halogen.Component (parentState, ParentState, ChildF (..))
 import Data.Maybe (Maybe (..))
 import Data.Functor.Coproduct (Coproduct (..))
-import Data.Array ((:), filter)
+import Data.Array ((:), filter, sortBy)
 import Data.Either (Either (..))
 import Debug.Trace (traceA)
 
@@ -53,20 +53,13 @@ listComponent = H.parentComponent { render, eval, peek: Just peek }
         IdeaSlot id -> do
           H.modify (\state -> state {ideas = (filter (\ideaId -> ideaId /= id) state.ideas)})
     _ -> pure unit
-    -- Coproduct (Right (CreateIdea _)) ->  do
-    --   idea <- H.query' childPathCreateIdea CreateIdeaSlot (H.request GetIdea)
-    --   case idea of
-    --     Just idea' -> do
-    --       H.query' childPathList ListSlot (H.action (insertIdea idea'))
-    --       pure unit
-    --     Nothing -> pure unit
-    -- _ -> pure unit
 
   render :: M.List -> H.ParentHTML M.Idea ListQuery IdeaQuery g Slot
   render state =
     HH.div_
       [
       HH.div [HP.class_ (className "idea-list")]
+        -- let sortedIdeas = sortBy (\idea1 idea2 -> compare idea1.quality idea2.quality) state.ideas in
         (map (renderIdea state.nextIdea) state.ideas)
       ]
 
